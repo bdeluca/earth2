@@ -1,0 +1,95 @@
+# Any parameters here affect the Earth web application
+#
+# This file is parsed with ERB, so you can insert ruby code using <%= "..." %> constructs
+
+# Configuration for doing user and group name lookup from uid and gid
+# By default (with ldap_server_name below commented out) ldap lookup is disabled
+# To enable LDAP, uncomment it. 
+#ldap_server_name: 'ldap.syd.rsp.com.au'
+ldap_server_port: 389
+ldap_user_lookup:
+  base: "ou=people, dc=rsp, dc=com, dc=au"
+  id_field: "uidNumber"
+  name_field: "uid"
+ldap_cache_time: <%= 1.days %>
+
+#
+# A daemon is considered dead if he didn't emit a heartbeat for this period of time 
+# after he was expected to.  This period should account for any latency that might
+# be caused by database load etc. 
+#
+heartbeat_grace_period: <%= 10.seconds %>
+
+# ----- Misc -----
+
+# Maximum length of breadcrumb trail in characters. The breadcrumb
+# trail will always contain (if applicable): a link to root, a link to
+# the current server, a link to the top-level directory on the server,
+# a link to the parent directory, and the name of the current
+# directory. Additional directories between the top-level directory
+# and the parent directory will only be shown if the total length of
+# the breadcrumb trail, in characters, is less or equal than the
+# number configured below.  
+#
+# Note that ideally, this would take the width of individual
+# characters and the width of the browser window into account; at this
+# point however this level of precision is not provided by Earth.
+#
+max_breadcrumb_length: 20
+
+# ----- Graph Configuration -----
+
+# Number of sub-directory levels shown in the graph. 1 means only the
+# immediate children of the current directory are shown, 2 means the
+# grandchildren of the current directory are shown as well, etc.
+# Note that the more levels are shown, the slower rendering will be.
+graph_depth: 5
+
+# The minimum angle for a segment to be displayed, in
+# degrees. Segments that occupy less than this angle will be merged
+# together into a segment representing multiple files or multiple
+# directories.
+graph_min_angle: 5.0 
+
+# How to deal with segments that even after merging are still below graph_min_angle.
+#
+# This can be one of "drop", "keep" or "empty"
+#
+# "drop" - remove the segments from display and grow all other
+# segments on that level to fill the resulting gap. This mode will
+# lead to small inaccuracies but will look visually pleasing.
+#
+# "keep" - small segments will be kept. This is the most precise
+# setting, but will lead to tiny segments which look visually
+# unpleasing and are not very helpful since it can be very hard to get
+# their tooltip displayed.
+#
+# "empty" - like keep, but the segments are not shown. This is less
+# precise than "keep" and looks equally ugley.
+
+graph_remainder_mode: drop
+
+# Graph coloring mode - one of :rainbow or :filetype.
+#
+# :rainbow - each segment color will use a hue corresponding to the center angle of the segment.
+# This looks pretty, but has the disadvantage that colors jump when navigating between levels.
+#
+# :by-type - each segment color will use a hue corresponding to the type of the segment, configured 
+# below.
+#
+graph_coloring_mode: rainbow
+
+#
+# Segment type hues and saturations, used only in graph_coloring_mode: by-type
+#
+graph_single_file_hue: 200
+graph_single_file_saturation: 100
+
+graph_single_directory_hue: 200
+graph_single_directory_saturation: 100
+
+graph_multiple_file_hue: 200
+graph_multiple_file_saturation: 100
+
+graph_multiple_directory_hue: 200
+graph_multiple_directory_saturation: 100

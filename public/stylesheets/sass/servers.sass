@@ -1,0 +1,209 @@
+-# Copyright (C) 2007 Rising Sun Pictures and Matthew Landauer
+-# 
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-# 
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-# 
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+body
+  :color #333
+  :background-color #e0e0e0
+  :margin
+    :top 5px
+    :left 20px
+    :right 20px
+    :bottom 20px
+
+body, p, ol, ul, td
+  :font-family "Gill Sans", Arial, Helvetica, sans-serif
+  :font-size 10pt
+
+pre
+  :background-color #eee
+  :padding 10px
+  :font-size 11px
+
+a
+  :color #000
+
+a:visited
+  :color #666
+
+a:hover
+  :color #fff
+  :background-color #000
+
+.fieldWithErrors
+  :padding 2px
+  :background-color red
+  :display table
+
+#Banner
+  :background-image url(/images/earth_logo_small.png)
+  :height 73px
+  :width 180px
+  :background-repeat no-repeat
+  :clear both
+  :background-position -10px -11px
+
+#errorExplanation
+  :width 400px
+  :border 2px solid red
+  :padding 7px
+  :padding-bottom 12px
+  :margin-bottom 20px
+  :background-color #f0f0f0
+  h2
+    :text-align left
+    :font-weight bold
+    :padding 5px 5px 5px 15px
+    :font-size 12px
+    :margin -7px
+    :background-color #c00
+    :color #fff
+  p
+    :color #333
+    :margin-bottom 0
+    :padding 5px
+  ul
+    li
+      :font-size 12px
+      :list-style square
+
+div.uploadStatus
+  :margin 5px
+
+div.progressBar
+  :margin 5px
+  div.border
+    :background-color #fff
+    :border 1px solid grey
+    :width 100%
+  div.background
+    :background-color #333
+    :height 18px
+    :width 0%
+
+table, tr, td, th
+  :border 1px solid black
+  :border-collapse collapse
+
+table
+  :background white
+
+td, th
+  :padding
+    :top 0.2em
+    :bottom 0.2em
+    :left 0.4em
+    :right 0.4em
+  :white-space nowrap
+
+td.name, th.name
+  :text-align left
+  :border-left 0px
+
+td.status, th.status
+  :text-align center
+
+td.icon
+  :width 16px
+  :background-position 4px 50%
+  :background-repeat no-repeat
+  :border-right 0px
+  :padding-right 0px
+
+td.name
+  :background
+    :image url(/images/icon_server.png)
+    :position 4px 50%
+    :repeat no-repeat
+  :padding-left 24px
+
+td.icon.directory
+  :background-image url(/images/icon_folder.png)
+
+th.icon
+  :border-right 0px
+  :padding-right 0px
+
+td.interval, th.interval, td.last-heartbeat, th.last-heartbeat
+  :text-align right
+
+td.last-heartbeat, th.last-heartbeat
+  :width 15em
+
+tr.up
+  :background #a0ffa0
+
+tr.incomplete
+  :background #eeeeee
+
+tr.down
+  :background #ffa0a0
+
+tr.unknown
+  :background #ffc070
+
+td.action
+  :background white
+
+table#servers
+  :width 100%
+  th.size, td.size
+    :text-align right
+  th.version, td.version
+    :text-align center
+  td.icon 
+    :width 22px !important
+    :min-width 22px !important
+  td.name 
+    :width 40%
+  td.status, td.size, td.version, td.interval
+    :width 10%
+  td.last-heartbeat 
+    :width 20%
+  td.action 
+    :width 0%
+
+table#server-roots
+  th.size, td.size, th.file-count, td.file-count, th.directory-count, td.directory-count
+    :text-align right
+  th.path, td.path 
+    :text-align left
+    :border-left 0px
+
+table#server-detail
+  th, td 
+    :text-align left
+  td.status.up
+    :color #008000
+  td.status.down
+    :color #800000
+    :background-color #ffc0c0
+    :font-weight bold
+  td.status.unknown
+    :color #604030
+    :background-color #ffc070
+    :font-weight bold
+
+div#links
+  :margin-top 1em
+
+div#footer 
+  :font-size small
+  :color grey
+  :margin-top 1em 
+  a, a:hover
+    :color grey
+    :background-color inherit
+

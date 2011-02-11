@@ -1,0 +1,154 @@
+# Copyright (C) 2007 Rising Sun Pictures and Matthew Landauer
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+response.headers['Content-Type'] = 'image/svg+xml'
+
+xml.instruct!
+
+xml.declare!(:DOCTYPE, :svg, 
+             :PUBLIC, "-//W3C//DTD SVG 1.1//EN", 
+             "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd")
+
+xml.instruct!("xml-stylesheet".to_sym, 
+              :type => "text/css",
+              :href => "/stylesheets/svg.css")
+
+xml.svg(:width => "100%", 
+        :height => "100%", 
+        :version => "1.1", 
+        :viewBox => "-100,-100,200,200", 
+        :preserveAspectRatio => "xMidYMid meet",
+        :xmlns => "http://www.w3.org/2000/svg", 
+        "xmlns:xlink".to_sym => "http://www.w3.org/1999/xlink") do 
+
+  xml.desc "SVG Graph for #{@server.name}:#{@directory.path}"
+  xml.title "#{@server.name}:#{@directory.path} - Earth"
+
+  level_segment_array = create_directory_segments(@directory)
+
+  xml.defs do
+    for level in (1..@level_count)
+      level_segment_array[level].each do |segment|
+        if not segment.empty?
+          xml.path(:id => "segment_#{level}_#{segment.segment_id}", :d => segment.get_svg_text_path(level))
+        end
+      end
+    end
+  end
+
+  for level in (1..@level_count)
+    level_segment_array[level].each do |segment|
+      if not segment.empty?
+        xml.path(:class => "segment", 
+                 :d => segment.get_svg_path(), 
+                 :style => "fill: #{segment.get_color}")
+        if segment.angle > 10
+          xml.text("xml:space".to_sym => "preserve", :class => (segment.directory? ? "directory-segment-text" : "file-segment-text")) do
+            xml.textPath(segment.name, "xlink:href".to_sym => "#segment_#{level}_#{segment.segment_id}", :startOffset => "50%")
+          end
+        end
+      end
+
+    end
+    if level_segment_array[level].size > 1
+      prev_segment = level_segment_array[level][-1]
+      level_segment_array[level].each do |segment|
+        if not (segment.empty? and prev_segment.empty?)
+          xml.path :class => "segment-divider", :d => segment.get_svg_divider_path(level)
+        end
+        prev_segment = segment
+      end
+    end
+  end
+
+  xml.radialGradient(:id => "gradient_divider", :gradientUnits => "userSpaceOnUse",
+                     :cx => 0, :cy => 0, :r => @level_radii[@level_count] + 10) do
+    xml.stop(:offset => "0%", "stop-color".to_sym => "black")
+    xml.stop(:offset => "90%", "stop-color".to_sym => "black")
+    xml.stop(:offset => "100%", "stop-color".to_sym => "white")
+  end
+
+  prev_segment = level_segment_array[-1][-1]
+  level_segment_array[-1].each do |segment|
+    if segment.directory?
+      xml.defs do
+        xml.radialGradient(:id => "gradient_#{segment.segment_id}", :gradientUnits => "userSpaceOnUse",
+                           :cx => 0, :cy => 0, :r => @level_radii[@level_count] + 10) do
+          xml.stop(:offset => "0%", "stop-color".to_sym => "#{segment.get_color}")
+          xml.stop(:offset => "90%", "stop-color".to_sym => "#{segment.get_color}")
+          xml.stop(:offset => "100%", "stop-color".to_sym => "white")
+        end
+      end
+
+      xml.path(:class => "directory-edge", 
+               :style => "fill: url(#gradient_#{segment.segment_id})",
+               :d => segment.get_svg_path(true))
+
+    end
+    if ((segment.directory? and level_segment_array[-1].size > 1) \
+        or (segment.empty? and prev_segment.directory?))
+      xml.path(:class => "directory-edge-divider", 
+               :style => "stroke: url(#gradient_divider)",
+               :d => segment.get_svg_divider_path_radius(@level_radii[@level_count], @level_radii[@level_count] + 8))
+    end
+    prev_segment = segment
+  end
+
+  xml.circle :r => @level_radii[0], :class => "current-directory"
+  if not level_segment_array[1].empty?
+    xml.circle :r => @level_radii[1], :class => "sub-directory"
+  end
+
+  for level in (2..@level_count)
+    level_segment_array[level].each do |segment|
+      if not segment.empty?
+        xml.path(:class => "sub-directory", 
+                 :d => segment.get_svg_path_outer(level))
+      end
+    end
+  end
+
+  xml.text("..", 
+           :y => 0,
+           :class => "directory-name")  
+
+  for level in (1..@level_count)
+    level_segment_array[level].each do |segment|
+      if not segment.href.nil?
+        xml.a("xlink:href".to_sym => segment.href,
+              :target => "_parent",
+              "xlink:title".to_sym => segment.tooltip) do
+          xml.path(:class => "segment-link", 
+                   :d => segment.get_svg_path())
+        end
+      else
+        xml.path(:class => "segment-link", 
+                 "xlink:title".to_sym => segment.tooltip,
+                        :d => segment.get_svg_path())
+      end
+    end
+  end
+  
+  xml.a("xlink:href".to_sym => url_for(:controller => "graph",
+                                       :escape => false,
+                                       :overwrite_params => {:server => (@directory.nil? or @directory.id.nil?) ? nil : @server.name,
+                                                             :path => (@directory.nil? or @directory.id.nil?) ? nil : (@directory.parent ? @directory.parent.path : nil),
+                                                             :action => nil}),
+        :target => "_parent",
+        "xlink:title".to_sym => @directory.id.nil? ? "Go to server view" : (@directory.parent ? "Go to parent directory" : "Go to server #{@server.name}")) do
+    xml.circle :r => @level_radii[0], :class => "segment-link"
+  end
+end

@@ -1,0 +1,93 @@
+This is a quick run-down on how to give the daemon a beating with the
+daemon_test utility.
+
+Firstly, setup a test directory somewhere. daemon_test will create a
+subdirectory within that directory which serves as the workspace for
+the daemon_test - the test will create, delete and move around files
+and directories in this directory.
+
+That subdirectory will be emptied before daemon_test starts, so you
+don't want to copy anything important in there.
+
+Now you can run daemon_test like this:
+
+    daemon_test /path/to/workspace
+
+daemon_test runs on the test database, so don't run it at the same
+time as the unit tests.
+
+If you want to run two test processes at the same time - which is a
+good idea if you want to test concurrency - you have to "fake" the
+hostname for at least one of the two by setting the EARTH_HOSTNAME
+environment variable. For instance, in bash:
+
+    EARTH_HOSTNAME=foobar daemon_test /path/to/workspace
+
+This way the earth_daemon will pretend to run on a host called
+"foobar" and thus use a different server entry than the other test
+process.
+
+By default, daemon_test will run indefinitely (until it crashes or you
+interrupt it.) You can limit it to a certain number of iterations by
+using the -i flag. For instance:
+
+    daemon_test -i 20 /path/to/workspace
+
+... will run 20 iterations (on each iteration, the test will
+manipulate the directory structure and check that the daemon updated
+the database properly.)
+
+By default, daemon_test uses a new seed for the random number
+generator on each run (derived from the time of day.) It will output
+this seed when it starts up and before it shuts down. You can
+explicitly specify a seed using the -s flag. This allows you to
+reproduce problems, note however that concurrency (running two tests
+simultaneously) and bloodshed (see below) can lead to unreproducible
+results.
+
+For instance:
+
+    daemon_test -s 12345 /path/to/workspace
+
+... uses "12345" as the seed for the RNG.
+
+Usually, before having the daemon do the initial indexing, daemon_test
+will only create a bunch of directories or files. You can make it
+perform a given number of iterations before doing the indexing by
+using the "-r" option. This is useful if you want to reproduce a
+problem that cropped up at a high iteration count. For instance, if
+you found a problem in iteration 5000, it would take quite long to run
+the test again for 5000 iterations. Instead, use for instance:
+
+     daemon_test -r 4999 -s 12345 /path/to/workspace
+
+... to replay the first 4999 mutations quickly and only then start and
+wait for the daemon database updates. This obviously makes only sense
+if you specify the same seed that's been used before (see below) and
+you're not using anything that would lead to unreproducible results,
+such as the bloodshed option.
+
+Note that if you use both -r and -i, the initial replay iterations are
+subtracted from the total iterations. So for instance, if you specify
+"-r 100 -i 150" daemon_test will perform 100 replay iterations and then
+50 normal iterations.
+
+Finally, you can test what happens when the daemon is interrupted
+while in the middle of doing an update by specifying the --bloodshed
+option (or the -b shorthand.) When daemon_test is waiting for the
+daemon to update the database, it will roll a d100 (random number
+between 0-99) twice per second. If the number is less than the
+bloodshed percentage you've specified, daemon_test will kill the
+daemon with a SIGINT and restart it immediately. Note that this is
+experimental at this time and can lead to the test hanging.
+
+For instance:
+
+    daemon_test -b 1.5 /path/to/workspace
+
+... means that every 0.5 seconds, there is a 1.5% probability that the
+daemon is killed and restarted.
+
+Note that due to timing issues, using the bloodshed option will most
+likely lead to unreproducible results even if you specify the same
+seed.

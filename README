@@ -1,0 +1,18 @@
+Earth - it's really, really big
+
+Earth allows you to find files across a large network of machines and track
+disk usage in real time. It consists of a daemon that indexes filesystems in
+real time and reports all the changes back to a central database. This can then
+be queried through a simple, yet powerful, web interface. Think of it like
+Spotlight or Beagle but operating system independent with a central database
+for multiple machines with a web application that allows novel ways of
+exploring your data.
+
+Earth is initially focused on managing the explosion of data that occurs in
+digital visual effects work.
+
+Earth is free and open source software. It is licensed under the The
+GNU General Public License (GPL) version 2. See the file COPYING for details.
+
+For more info see:
+http://open.rsp.com.au/projects/earth

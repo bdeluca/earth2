@@ -1,0 +1,52 @@
+-# Copyright (C) 2007 Rising Sun Pictures and Matthew Landauer
+-# 
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-# 
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-# 
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+%div
+  .Left{:style => "z-index: 100"}
+    %h2.breadcrumbs= breadcrumbs_with_server_and_directory @server, @directory
+    - size = current_total_size
+    .total-size= "#{ApplicationHelper::human_size_in(ApplicationHelper::human_units_of(size), size)} #{ApplicationHelper::human_units_of(size)}"
+    %h2.warning
+      - unless @server.nil? || @server.daemon_alive?
+        = "Warning! The Earth daemon has stopped running on #{@server.name}"
+        %br/
+        %small
+          The indexed data is
+          = time_ago_in_words(@server.last_update_finish_time, true) unless @server.last_update_finish_time.nil?
+          old
+  .Right#Filter{:style => "margin: 1em 0.1em 0 0;"}
+    - form_tag({:overwrite_params => {}}, {:method => 'get'}) do
+      %table
+        %caption Filter
+        %tr
+          %td.first-row{:style => "text-align: right;"}= content_tag :label, "by filename:", "for" => "filter_filename"
+          %td.first-row= text_field_tag "filter_filename", params[:filter_filename], :size => 15
+        %tr
+          %td.last-row{:style => "text-align: right;"}= content_tag :label, "by user:", "for" => "filter_user"
+          %td.last-row= text_field_tag "filter_user", params[:filter_user], :size => 15
+          = auto_complete_stylesheet
+          = content_tag "div", "", :id => "filter_user_auto_complete", :class => "auto_complete"
+          = auto_complete_field "filter_user", :url => {:action => "auto_complete_for_filter_user"}
+        %tr
+          %td.double-row{:colspan => "2"}
+            %span.show-empty-checkbox
+              = check_box_tag "show_empty", "1", params[:show_empty], :disabled => (not can_show_empty or not @any_empty)
+              = content_tag :label, "Show empty", {"for"=>"show_empty", "class"=> ((not can_show_empty or not @any_empty) ? 'checkbox-label-disabled' : 'checkbox-label-enabled'), :title => "Empty servers/directories have no files that match the filter"}
+            %span.show-hidden-checkbox
+              = check_box_tag "show_hidden", "1", params[:show_hidden], :disabled => (not can_show_hidden or not @any_hidden)
+              = content_tag :label, "Show hidden", {"for"=>"show_hidden", "class"=> ((not can_show_hidden or not @any_hidden) ? 'checkbox-label-disabled' : 'checkbox-label-enabled'), :title => "Hidden files/directories begin with a dot"}
+        %tr
+          %td.filter-submit#FilterSubmit{:colspan => "2"}= submit_tag "Update", :name => nil, :class => "submit"

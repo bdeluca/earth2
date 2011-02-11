@@ -1,0 +1,117 @@
+#!/usr/bin/env ruby
+
+# Copyright (C) 2007 Rising Sun Pictures and Matthew Landauer
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+require 'optparse'
+require 'ostruct'
+require 'rubygems'
+require_gem 'termios'
+
+require File.join(File.dirname(__FILE__), '..', 'lib', 'earth_plugin_interface', 'plugin_manager')
+
+BANNER = <<END_OF_STRING
+
+USAGE: 
+  #{$0} [-k FILE] file [file ...]
+
+END_OF_STRING
+
+DEFAULT_KEY_FILE = File.join(File.dirname(__FILE__), '..', 'config', 'keys', 'test_key.pem')
+
+class SignPluginCommand
+
+  def parse_command_line
+
+    @options = OpenStruct.new
+
+    @options.key_file = DEFAULT_KEY_FILE
+
+    opts = OptionParser.new
+    opts.banner = BANNER
+    opts.on("-k", "--key FILE", "Use key from file FILE") do |key_file| 
+      @options.key_file = key_file
+    end
+  end
+
+  def validate_command_line
+    if not File.exist? @options.key_file
+      if @options.key_file == DEFAULT_KEY_FILE
+        raise "The default key file does not exist; you can generate it by running 'pluginmanager/create_cert.rb'"
+      else
+        raise "The key file #{@options.key_file} does not exist"
+      end
+    end
+  end
+
+  def initialize
+    begin
+      parse_command_line
+      validate_command_line
+    rescue => err
+      $stderr.puts $!
+      exit 10
+    end
+  end
+
+  def read_password(prompt)
+    # get current termios value of $stdin.
+    orig = Termios.getattr($stdin)
+    begin
+      tios = orig.dup
+
+      # make new value to be set by resetting ECHO and ICANON bit of
+      # local modes: see termios(4).
+      tios.c_lflag &= ~(Termios::ECHO|Termios::ICANON)
+      
+      # set new value of termios for $stdin.
+      Termios.setattr($stdin, Termios::TCSANOW, tios)
+      
+      print prompt
+      result = $stdin.readline.strip
+      print "\n"
+      result
+    ensure
+      # restore original termios state.
+      Termios::setattr($stdin, Termios::TCSANOW, orig)
+    end
+  end
+
+  def run
+    plugin_manager = PluginManager.new
+
+    password = read_password("Enter password for key #{@options.key_file}: ")
+    
+    begin
+      private_key = OpenSSL::PKey::RSA.new(File.read(@options.key_file), password)
+    rescue
+      raise "Cannot load private key from file '#{@options.key_file}': #$!"
+      exit 10
+    end
+
+    for file in ARGV
+      begin
+        plugin = plugin_manager.sign(file, private_key)
+      rescue => err
+        $stderr.puts "Unable to sign plug-in file #{file}: #$!"
+        break
+      end
+    end
+  end
+end
+
+SignPluginCommand.new.run
+

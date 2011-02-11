@@ -1,0 +1,36 @@
+-# Copyright (C) 2007 Rising Sun Pictures and Matthew Landauer
+-# 
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-# 
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-# 
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+%h1 All Servers
+%table#servers
+  %tr
+    %th.name Host
+    %th.status Status
+    %th.size Size
+    %th.version Daemon Version
+    %th.interval Update Interval
+    %th.last-hearbeat Last Heartbeat
+    %th.action{:colspan => "2"} Actions
+    - for server in @servers
+      %tr{:class => daemon_status(server)}
+        %td.name= server.name
+        %td{:class => "status " + daemon_status(server)}= daemon_status(server).capitalize
+        %td.size= ApplicationHelper.human_size(server.size.bytes)
+        %td.version= server.daemon_version || "Not running"
+        %td.interval= server.update_interval.to_s + " sec"
+        %td.last-heartbeat= server.heartbeat_time ? time_ago_in_words(server.heartbeat_time, true) + " ago" : "N/A"
+        %td.action= link_to 'Show', :action => :show, :params => {:server => server.name }
+        %td.action= link_to 'Edit', :action => :edit, :params => {:server => server.name }

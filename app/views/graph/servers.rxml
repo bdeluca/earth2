@@ -1,0 +1,57 @@
+# Copyright (C) 2007 Rising Sun Pictures and Matthew Landauer
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+response.headers['Content-Type'] = 'image/svg+xml'
+
+xml.instruct!
+
+xml.declare!(:DOCTYPE, :svg, 
+             :PUBLIC, "-//W3C//DTD SVG 1.1//EN", 
+             "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd")
+
+xml.instruct!("xml-stylesheet".to_sym, 
+              :type => "text/css",
+              :href => "/stylesheets/svg.css")
+
+xml.svg(:width => "100%", 
+        :height => "100%", 
+        :version => "1.1", 
+        :viewBox => "-100,-100,200,200", 
+        :preserveAspectRatio => "xMidYMid meet",
+        :xmlns => "http://www.w3.org/2000/svg", 
+        "xmlns:xlink".to_sym => "http://www.w3.org/1999/xlink") do 
+
+  create_server_circles.each do |server_circle|
+    xml.a("xlink:title".to_sym => "#{server_circle.server.name} (#{ApplicationHelper.human_size_in(ApplicationHelper.human_units_of(server_circle.server.size.bytes), server_circle.server.size.bytes)} #{ApplicationHelper.human_units_of(server_circle.server.size.bytes)})",
+          "xlink:href".to_sym => url_for(:controller => "graph", 
+                                         :escape => false,                                         
+                                         :overwrite_params => { :server => server_circle.server.name, :action => nil }), :target => "_parent") do
+      xml.circle(:cx => server_circle.center.x, :cy => server_circle.center.y, :r => server_circle.radius, :class => "server")
+      
+      xml.g(:transform => "translate(#{server_circle.center})") do
+        xml.g(:transform => "scale(#{server_circle.radius / 100.0})") do
+          xml.text("#{server_circle.server.name}", 
+                   :y => - 10,
+                   :class => "server-name")  
+        
+        xml.text("#{ApplicationHelper.human_size_in(ApplicationHelper.human_units_of(server_circle.server.size.bytes), server_circle.server.size.bytes)} #{ApplicationHelper.human_units_of(server_circle.server.size.bytes)}",
+                 :y => + 10,
+                 :class => "server-size")
+        end
+      end
+    end
+  end
+end

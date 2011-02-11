@@ -1,0 +1,42 @@
+#
+# The file used for the UNIX socket for communication with the daemon
+#
+socket_file: /tmp/earthd.sock
+
+#
+# The file used for storing the process ID of a running daemon
+#
+pid_file: /tmp/earthd.pid
+
+#
+# The file used for logging daemon status information
+#
+log_file: /tmp/earthd.log
+
+#
+# The severity threshold for logging daemon log messages. This can be
+# one of FATAL, ERROR, WARN, INFO or DEBUG.
+#
+# Note that if the daemon is run on a large file system or one that
+# frequently changes and this level is set to INFO or DEBUG, the log
+# file might grow rapidly and you may want to make sure that there is
+# enough space for it and maybe put log rotation in place.
+#
+log_level: DEBUG
+
+#
+# The rails environment to run in. This can be one of production,
+# development and test.
+#
+# This option is likely to be removed in the future in favor of direct 
+# database configuration
+#
+rails_environment: development
+
+#
+# Ignore update_interval stored in database and use given update
+# interval (in seconds) instead
+#
+#override_update_interval: 30
+
+

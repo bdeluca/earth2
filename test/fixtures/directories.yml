@@ -1,0 +1,61 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+foo:
+  id: 1
+  name: "/foo"
+  path: "/foo"
+  lft: 1
+  rgt: 10
+  level: 1
+  server_id: 1
+foo_bar:
+  id: 2
+  name: "bar"
+  path: "/foo/bar"
+  parent_id: 1
+  lft: 2
+  rgt: 9
+  level: 2
+  server_id: 1
+foo_bar_twiddle:
+  id: 3
+  name: "twiddle"
+  path: "/foo/bar/twiddle"
+  parent_id: 2
+  lft: 3
+  rgt: 8
+  level: 3
+  server_id: 1
+foo_bar_twiddle_frob:
+  id: 4
+  name: "frob"
+  path: "/foo/bar/twiddle/frob"
+  parent_id: 3
+  lft: 4
+  rgt: 7
+  level: 4
+  server_id: 1
+foo_bar_twiddle_frob_baz:
+  id: 5
+  name: "baz"
+  path: "/foo/bar/twiddle/frob/baz"
+  parent_id: 4
+  lft: 5
+  rgt: 6
+  level: 5
+  server_id: 1
+bar:
+  id: 6
+  name: "/bar"
+  path: "/bar"
+  lft: 1
+  rgt: 2
+  level: 1
+  server_id: 2
+fizzle:
+  id: 7
+  name: "/fizzle"
+  path: "/fizzle"
+  lft: 1
+  rgt: 2
+  level: 1
+  server_id: 3

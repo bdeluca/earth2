@@ -1,0 +1,113 @@
+-# Copyright (C) 2007 Rising Sun Pictures and Matthew Landauer
+-# 
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-# 
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-# 
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+svg
+  :background #ffffff
+
+path.text-path
+  :visibility hidden
+
+textPath
+  :font-size 2.4pt
+  :text-align center 
+  :writing-mode lr-tb 
+  :text-anchor middle
+  :alignment-baseline central 
+  :dominant-baseline central
+
+text
+  :alignment-baseline central 
+  :dominant-baseline central
+
+circle.current-directory, .sub-directory
+  :fill-opacity 0
+  :stroke currentColor  
+  :stroke-width 0.1
+  :stroke-linecap butt
+  :stroke-linejoin round
+  :stroke-dasharray none 
+  :stroke-opacity 1
+
+circle.current-directory 
+  :fill-opacity 1
+  :fill #dddddd
+
+.directory-edge 
+  :fill-opacity 1
+  :stroke-opacity 0
+
+.directory-edge-divider
+  :fill-opacity 0
+  :stroke-opacity 1
+  :stroke-width 0.1
+
+path.segment
+  :fill-opacity 1
+  :stroke-opacity 0
+
+.segment-divider
+  :fill-opacity 0
+  :stroke-opacity 1
+  :stroke black
+  :stroke-width 0.1
+
+.segment-link
+  :fill-opacity 0
+  :stroke-opacity 0
+
+text.directory-name 
+  :font-size 2.4pt 
+  :font-weight bold 
+  :text-anchor middle
+  :alignment-baseline central 
+  :dominant-baseline central
+
+text.directory-size 
+  :font-size 2.4pt 
+  :text-anchor middle
+  :alignment-baseline central 
+  :dominant-baseline central
+
+.file-segment-text, .directory-segment-text
+  :alignment-baseline central 
+  :dominant-baseline central
+
+.file-segment-text
+  :fill white
+
+.directory-segment-text
+  :text-decoration underline
+  :fill black
+
+circle.server
+  :fill grey
+  :fill-opacity 0.27
+  :stroke black
+  :stroke-opacity 1
+  :stroke-width 0.2
+
+text.server-name
+  :font-size 12pt 
+  :font-weight bold 
+  :text-anchor middle 
+  :alignment-baseline central 
+  :dominant-baseline central
+
+text.server-size
+  :font-size 12pt 
+  :text-anchor middle 
+  :alignment-baseline central 
+  :dominant-baseline central

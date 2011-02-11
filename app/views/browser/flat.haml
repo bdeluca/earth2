@@ -1,0 +1,70 @@
+-# Copyright (C) 2007 Rising Sun Pictures and Matthew Landauer
+-# 
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-# 
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-# 
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+%p
+  %table.page-list#pagelist
+    %tr
+      / Show current page and page count
+      %th.page-list-head= "Page #{@current_page} of #{@page_count}"
+
+      - if @page_count > 1
+        / Link to previous page
+        -# TODO: Replace link_to with link_to_if
+        - if @current_page > 1
+          %th.page-link= link_to "<<", :overwrite_params => {:page => (@current_page - 1 == 1 ? nil : @current_page - 1) }
+        - else
+          %th.page-link-disabled <<
+
+        / Link to next page
+        - if @current_page < @page_count
+          %th.page-link= link_to ">>", :overwrite_params => {:page => @current_page + 1 }
+        - else
+          %th.page-link-disabled >>      
+
+        / Direct link to other pages
+        - (1..@page_count).each do |page_number|
+          - if page_number == @current_page
+            %td.page-current= page_number
+          - elsif (page_number - @current_page).abs < 10 |
+          or ((page_number - @current_page).abs < 50 and page_number % 10 == 0) |
+          or ((page_number - @current_page).abs < 500 and page_number % 100 == 0) |
+          or ((page_number - @current_page).abs < 5000 and page_number % 1000 == 0) |
+          or ((page_number - @current_page).abs < 50000 and page_number % 100000 == 0) |
+          or (page_number % 100000 == 0) |
+          or page_number == 1 |
+          or page_number == @page_count |
+            %td.page-link= link_to page_number, :overwrite_params => {:page => (page_number == 1 ? nil : page_number) }
+
+  %table.listing.flat#flat-browser
+    %thead
+      %tr
+        %th.name= sortable_table_header "Name"
+        %th.path= sortable_table_header "Path"
+        %th.modified= sortable_table_header "Modified"
+        %th.user User
+        %th.size= sortable_table_header "Size"
+        %th/
+    %tbody
+      - @files.each do |file|
+        %tr{:class => cycle('even', 'odd')}
+          %td.name= file.name
+          %td.path= linked_file_path(file)
+          %td.modified
+            %span{:title => file.modified}= distance_of_time_in_words_to_now(file.modified) + " ago"
+          %td.owner_user
+            %span= file.user.name
+          %td.size
+            %span= ApplicationHelper.human_size_in(ApplicationHelper.human_units_of(file.bytes), file.bytes) + " " + ApplicationHelper.human_units_of(file.bytes)

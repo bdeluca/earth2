@@ -1,0 +1,46 @@
+What's new in version 0.2:
+
+Usability improvements:
+* Improved warning message in web application when daemon has stopped communicating
+* Minor layout improvements to navigation and flat view
+* Sort flat file view by size instead of path. Implements ticket #119
+* Make Earth logo link to navigation root in both user and administration pages
+* Added 'show hidden' option to web application. Implements ticket #80.
+* Moved 'show empty' option to filter box and made it a checkbox
+* Improved accessibility by using HTML label tags
+* Made parent link and display of current level in navigation configurable and made no parent link and no current level the default.
+* Allow sorting flat file view by name, path, modification date and size
+* Replace parts of the breadcrumb trail with "...". Maximum length is configurable. Implements ticket #71.
+* Make browser window title in administration pages consistent with other pages
+* New easier and more powerful command line interface to starting/stopping/querying the Earth daemon.
+* In radial view, replaced display of current directory path and size with '..'
+* Show total size of current directory, server, or root underneath bread crumb trail
+* Removed experimental "treemap" view
+
+Code improvements:
+* Improve cross-platform reliability of file_monitor_test
+* Significant refactoring of code
+* Removal of dead code
+* Simplified and refactored directory size caching implementation.
+* Added Changelog & NEWS
+* Using .haml templates instead of .rhtml to generate .html
+* Using .sass to generate stylesheets
+* unfroze Rails from distribution
+* Started implementing Earth daemon plugins
+
+Performance improvements:
+* Improved speed of radial graph. Addresses performance problem described in ticket #138
+* Optimized faster nested set to fetch all ancestors with a single query
+* file_monitor_test speed improvement by using Kernel.rand over 'dd'
+* Database size reduced massively (by not storing paths of files)
+* In find_subdirectories_at_level replace db lookup with walking tree in memory
+
+Fixes:
+* Fixed radial view in Firefox 2.0.0.3. Fixes ticket #143.
+* Timestamps are aware of timezones. Fixes ticket #158.
+* Fixed daemon crash when encountering a file with a name that doesn't encode into unicode.
+* Improved database migrations to not break under ActiveRecord model changes. Fixes ticket #151.
+* Full path is now shown correctly in "flat" view. Fixes ticket #118.
+* Fixed caching bug that would arise if daemon is interrupted in initial indexing pass.
+* Use unbuffered output in file_monitor. Addresses ticket #134
+* Bugfix in graph_helper

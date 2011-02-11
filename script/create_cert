@@ -1,0 +1,98 @@
+#!/usr/bin/env ruby
+
+# Copyright (C) 2007 Rising Sun Pictures and Matthew Landauer
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+require 'openssl'
+require 'rubygems'
+require_gem 'termios'
+
+keypair_file = File.expand_path(File.join(File.dirname(__FILE__), "..", "config", "keys", "test_key.pem"))
+cert_file = File.expand_path(File.join(File.dirname(__FILE__), "..", "config", "certificates", "test_cert.pem"))
+
+raise "Keypair file already exists at #{keypair_file}. Remove that file to proceed" if File.exist? keypair_file
+raise "Certificate file already exists at #{cert_file}. Remove that file to proceed" if File.exist? cert_file
+
+keypair = OpenSSL::PKey::RSA.new 1024
+
+print "Your name or organization name: "
+name = $stdin.readline.strip
+
+raise "Name is empty" if name.empty?
+
+print "Your two-letter country code: "
+cc = $stdin.readline.strip.upcase
+
+raise "Country code doesn't have two letters" if cc.size != 2
+
+cert_name = [
+  ['C', cc, OpenSSL::ASN1::PRINTABLESTRING],
+  ['O', name, OpenSSL::ASN1::UTF8STRING],
+]
+
+cert = OpenSSL::X509::Certificate.new
+name = cert_name.dup << ['CN', 'CA']
+cert.subject = cert.issuer = OpenSSL::X509::Name.new(cert_name)
+cert.not_before = Time.now
+cert.not_after = Time.now + 365 * 24 * 60 * 60
+cert.public_key = keypair.public_key
+cert.serial = 0x0
+cert.version = 2 # X509v3
+
+cert.sign keypair, OpenSSL::Digest::SHA1.new
+
+# get current termios value of $stdin.
+orig = Termios.getattr($stdin)
+begin
+  tios = orig.dup
+
+  # make new value to be set by resetting ECHO and ICANON bit of
+  # local modes: see termios(4).
+  tios.c_lflag &= ~(Termios::ECHO|Termios::ICANON)
+
+  # set new value of termios for $stdin.
+  Termios.setattr($stdin, Termios::TCSANOW, tios)
+
+  while true
+    print "Enter password: "
+    password = $stdin.readline.strip
+    print "\nRepeat password: "
+    password_repeat = $stdin.readline.strip
+    print "\n"
+    if password == password_repeat
+      break
+    else
+      $stdout.puts "Password do not match, try again."
+    end
+  end
+ensure
+  # restore original termios state.
+  Termios::setattr($stdin, Termios::TCSANOW, orig)
+end
+
+keypair_export = keypair.export OpenSSL::Cipher::DES.new(:EDE3, :CBC), password
+
+File.open keypair_file, "w", 0600 do |fp|
+  fp << keypair_export
+end
+puts "Key pair was written to #{File.expand_path keypair_file}."
+
+File.open cert_file, "w", 0644 do |f|
+  f << cert.to_pem
+end
+puts "Certificate was written to #{File.expand_path cert_file}."
+puts "The certificate will be valid for one year."
+puts "Done."

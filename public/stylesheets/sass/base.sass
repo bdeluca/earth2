@@ -1,0 +1,499 @@
+-# Copyright (C) 2007 Rising Sun Pictures and Matthew Landauer
+-# 
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-# 
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-# 
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+-#
+-#  Base stylesheet
+-#  version: 0.0.1
+-#
+
+-# Default
+
+body
+  :font
+    :family "Gill Sans", Arial, Helvetica, sans-serif
+    :size 12pt
+  :background-color #e0e0e0
+  :padding 0
+  :margin
+    :top 5px
+    :left 20px
+    :right 20px
+    :bottom 20px
+  :text-align center
+
+-# Structural Elements
+
+#Banner
+  :float left
+  :background-image url(/images/earth_logo_small.png)
+  :height 73px
+  :width 180px
+  :background-repeat no-repeat
+  :clear both
+  :background-position -10px -11px
+
+#Content
+  :text-align left
+  :margin-bottom 20px
+  :clear both
+
+#ContentInside
+  :background-color #fff
+  :text-align left
+  :padding 5px
+  :border 1px solid #c2c2c2
+
+#Top
+  :width 100%
+  :text-align left
+  :color #fff
+
+  a:link, a:visited
+    :text-decoration underline
+    :color #fff
+
+  a:hover
+    :color #005422
+    :background-color #fff
+    :text-decoration none
+
+  .accesskey
+    :text-decoration underline
+
+-# TABS
+
+#Tabs
+  :text-align left
+  :float left
+  :clear both
+  :padding 0
+  :width 74%
+  :font-size 11px
+
+  a:link, a:visited
+    :float left
+    :font-size 11px
+    :font-weight normal
+    :padding 7px 8px 7px 8px
+    :margin 0
+    :text-decoration none
+    :color #000
+    :border-right 1px solid #c2c2c2
+    :border-top 1px solid #c2c2c2
+
+  a:link.active, a:visited.active
+    :float left
+    :background #FFF
+    :color #333
+    :font-weight bold
+    :font-size 11px
+    :text-decoration none
+    :padding 8px 8px 7px 8px
+    :margin-bottom -1px
+
+  .active
+    :float left
+    :background #FFF
+    :color #333
+    :font-weight bold
+    :font-size 11px
+    :padding 8px 8px 7px 8px
+    :margin-bottom -1px
+    :text-decoration none
+
+  a:hover
+    :text-decoration none
+    :color #000
+    :padding 8px 8px 7px 8px
+    :margin-bottom -1px
+
+  a.float_right, .active.float_right
+    :float right !important
+    :border
+      :left 1px solid #c2c2c2
+      :top 1px solid #c2c2c2
+      :right none !important
+
+#TabsInside
+  :float left
+  :margin 0 10px 0 0
+  :background #f2f2f2
+
+-# For the RSS and CSV export images
+
+#ExportLinks
+  :margin-top 50px
+  :padding 10px
+  :border-top 1px solid #eee
+
+-# Headings
+
+h1
+  :font-size 18px
+  :line-height 22px
+  :font-weight bold
+
+h2
+  :font-size 16px
+  :font-weight bold
+  :line-height 20px
+  :margin 1em 0 0 0
+  :text-align left
+
+h3
+  :font-size 14px
+  :font-weight bold
+  :line-height 18px
+
+h4
+  :font-size 13px
+  :font-weight bold
+  :line-height 17px
+  :margin-bottom 0.5em
+
+-# This is needed for the CSS graphs
+
+div.bar-outer
+  :width 200px
+  :padding 0px
+  :margin-left 0.5em
+  :height 1.5em
+
+.graph
+  :xxposition xxrelative
+  -# IE is dumb
+  :width 200px
+  :xxpadding 2px
+  :xxz-index 1
+
+div.bar, div.filebar
+  :position relative
+  :top 20% !important
+  :text-align center
+  :color #333
+  :height 60%
+  :font-size 1px
+
+div.bar
+  :background #66CC33
+
+div.filebar
+  :background #3181C4
+
+div.xxfilebar
+  :xxdisplay xxblock
+  :xxposition xxrelative
+  :background #3181C4
+  :text-align center
+  :color #333
+  :height 1em
+  :line-height 1em
+
+.xgraph
+  .bar
+    span
+      :xxdisplay xxblock
+      :xxposition xxabsolute
+      :left 1em
+
+-# Images
+
+.export_img
+  :border 0
+  :vertical-align middle
+
+-# Alignments (mostly for "things" that need to go into the same cell but
+-# one with a left alignment and the other with a right alignment)
+
+.Left
+  :float left
+  :text-align left
+
+.Right
+  :float right
+  :clear none
+
+-# Filesystem Browser:
+-# Most of this is based on the Source Code Browser CSS and HTML from 
+-# Collaboa [ http://dev.collaboa.org/ ]
+
+#Content
+  table.listing
+    :border-collapse collapse
+    :border-spacing 0
+    :width 100%
+    :clear both
+
+    td
+      :padding 2px
+
+table.listing
+  thead
+    :background #ddd
+      
+    th
+      a.asc
+        :padding-right 10px
+        :background
+          :image url(/images/sort_asc.png)
+          :repeat no-repeat
+          :position 100% 50%
+      a.desc
+        :padding-right 10px
+        :background
+          :image url(/images/sort_desc.png)
+          :repeat no-repeat
+          :position 100% 50%
+
+  th
+    :font-size 11px
+    :font-weight bold
+    :padding 3px 5px
+    :vertical-align bottom
+    :text-align center
+    :vertical-align top
+
+  td
+    :vertical-align middle
+    :padding 0 2px 0 2px
+    
+  tr.even
+    :background-color #fbfbfb
+  tr.odd
+    :background-color #f1f1f1
+
+table#browser
+  tr.parent
+    :background-color #fbfbfb
+
+div.events_even
+  :background-color #fbfbfb
+  :clear both
+  :display table
+  :width 100%
+
+div.events_odd
+  :background-color #f1f1f1
+  :clear both
+  :display table
+  :width 100%
+
+-# Repository browser
+
+#Content
+  table#flat-browser, table#browser
+    :margin 0px
+    :padding 0px
+    :font-size 13px
+    :border 0px
+    :border-collapse collapse
+    :line-height 1.5em
+
+    tr, td, th
+      :margin 0px
+      :padding 0px
+      :font-size 13px
+      :border 0px
+      :border-collapse collapse
+      :line-height 1.5em
+
+  table#flat-browser
+    td, th
+      :white-space nowrap  
+    th.size, td.size
+      :text-align right !important
+    td.owner_user span, td.size, td.modified, th.modified, th.size
+      :margin-left 1.2em
+      :margin-right 1.2em
+    th.path, th.name
+      :text-align left !important
+    td.path
+      :white-space normal !important
+      :padding-left 1em
+      :text-indent -1em
+    th.modified, td.modified
+      :text-align right
+    td.owner_user
+      :text-align center
+
+  table#browser
+    td
+      :white-space nowrap  
+    th.name
+      :width 75%
+    th.modified span, th.user span, th.size span
+      :xmargin-left 1.2em !important
+      :xmargin-right 1.2em !important
+    th.rev
+      :width 5%
+      :background yellow
+    th.age
+      :width 5%
+      :background yellow
+    th.msg
+      :width 15%
+      :background yellow
+    td.File.icon
+      :width 25px
+      :background-position 4px 50%
+      :background-repeat no-repeat
+    td.icon
+      :padding 0px
+      :margin 0px
+      :width 25px
+      a
+        :width 25px
+        :background-position 50% 50%
+        :background-repeat no-repeat
+    td.server, td.modified, td.size, td.owner_user, td.owner_group
+      :text-align center
+    th.modified, td.modified, th.size, td.size
+      :text-align right !important
+    td.size span, th.size span, td.owner_user span, th.owner_user span, td.modified span, th.modified span
+      :margin-left 0.6em
+      :margin-right 0.6em
+    td.owner_user
+      span
+        :margin-left 1.2em
+        :margin-right 1.2em
+    th.path, td.path, th.name, td.name
+      :text-align left !important
+    td.msg
+      :font-size 9px
+      :color #666
+    
+    td.File.icon
+      :background-image url(/images/icon_file.png)
+    td.Dir.icon
+      a
+        :background-image url(/images/icon_folder.png)
+    td.Server.icon
+      a
+        :background-image url(/images/icon_server.png)
+    td.parent.icon
+      a
+        :background-image url(/images/icon_up.gif)
+    td.bar
+      :vertical-align middle
+    td
+      a
+        :display block
+        :width 100%
+        :height 1.5em !important
+        :line-height 1.5em !important
+        :margin 0px
+        :padding 0px
+        :vertical-align bottom
+    td.size
+      a
+        :text-decoration none
+        :color black
+
+-# Table Used in the Filter Section (top right hand corner)
+
+#Filter
+  :font-size 11px
+  td.filter-submit
+    :text-align right
+    input
+      :font-size 11px
+  
+  table
+    :background-color #f1f1f1
+    :border-collapse collapse
+    :border-spacing 0
+    caption
+      :background-color #cacaca
+      :font-weight bold
+    td
+      :padding 0 5px 0 5px
+    td.first-row
+      :padding-top 4px
+    td.last-row
+      :padding-bottom 4px
+
+-# For autocomplete box from LDAP, so that it displays "over" the graph bar
+   
+.auto_complete
+  :z-index 2
+
+#HomepageLink
+  :float left
+  a
+    :color grey      
+
+#Footer
+  :font-size small
+  :text-align right
+  :color grey
+  :margin-top 1em
+
+-# Page Navigation
+
+table.page-list
+  :clear left
+  td, th
+    :font-size small
+
+th.page-list-head
+  :padding-right 1em
+  :width 8em
+  :white-space nowrap 
+
+.page-current
+  :border 1px solid white
+
+.page-link, .page-link-disabled
+  :border 1px solid grey
+  :padding-left 0.2em
+  :padding-right 0.2em                     
+
+.page-link-disabled 
+  :color #cccccc
+
+.page-link
+  a
+    :text-decoration none
+  a:hover
+    :background #dddddd
+
+tr.even:hover, tr.odd:hover
+  :background #cccccc !important
+
+.breadcrumbs
+  :font-size 90%
+  :margin-top 0.3em
+  :padding-top 0px
+
+.browser-warning
+  :text-align center
+  :color #a00000
+  :font-size small
+
+.treemap-warning
+  :text-align center
+  :font-size small
+
+.checkbox-label-disabled
+  :color grey
+
+.show-empty-checkbox
+  :margin-right 1em
+
+.sortable-column img
+  :border 0px
+
+div.total-size
+  :font-size small

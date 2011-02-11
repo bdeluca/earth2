@@ -1,0 +1,73 @@
+-# Copyright (C) 2007 Rising Sun Pictures and Matthew Landauer
+-# 
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-# 
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-# 
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+%h1= @server.name
+%table#server-detail
+  %tr
+    %th Host
+    %td= @server.name
+  %tr
+    %th Daemon Status
+    %td{:class => "status " + daemon_status(@server)}= daemon_status(@server).capitalize
+  %tr
+    %th Daemon Version
+    %td= @server.daemon_version || "Not running"
+  %tr
+    %th Update interval
+    %td= @server.update_interval
+  %tr
+    %th Last update finish time
+    %td= @server.last_update_finish_time ? time_ago_in_words(@server.last_update_finish_time, true) + " ago" : "N/A"
+  %tr
+    %th Heartbeat interval
+    %td= @server.heartbeat_interval.to_s + " seconds"
+  %tr
+    %th Heartbeat last seen
+    %td= @server.heartbeat_time ? time_ago_in_words(@server.heartbeat_time, true) + " ago" : "N/A"
+  %tr
+    %th Initial indexing complete?
+    %td= @server.cache_complete? ? "Yes" : "No"
+  %tr
+    %th Total size
+    %td= ApplicationHelper.human_size(@server.size.bytes)
+  %tr
+    %th Total directories
+    %td= number_with_delimiter(@server.directories.count)
+  %tr
+    %th Total files
+    %td= number_with_delimiter(@server.size.count)
+
+%h2= "Root directories on " + @server.name
+%table#server-roots
+  %tr
+    %th.path{:colspan => "2"} Path
+    %th.size Size
+    %th.directory-count Total Directories
+    %th.file-count Total Files
+    %th.indexed Indexed
+  - for root in Earth::Directory::roots_for_server(@server)
+    %tr
+      %td.icon.directory
+      %td.path= root.name
+      %td.size= ApplicationHelper.human_size(root.size.bytes)
+      %td.directory-count= number_with_delimiter(root.recursive_directory_count)
+      %td.file-count= number_with_delimiter(root.size.count)
+      %td.indexed= root.cache_complete? ? "Yes" : "Pending"
+
+#links
+  = link_to 'Edit', :action => :edit, :params => {:server => @server.name }
+  |
+  = link_to 'Back', servers_path

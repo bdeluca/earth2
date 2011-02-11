@@ -1,0 +1,149 @@
+earthd
+
+OVERVIEW
+
+earthd is the new command line utility for controlling the earth
+daemon service which continuously scans directories on the local host,
+updating the central Earth database.
+
+earthd needs to be invoked with one of the following actions:
+
+  start - starts the daemon
+  stop - stops the daemon
+  restart - restarts the daemon (stops and starts it again)
+  status - displays status information about the earth daemon
+  clear - clears out the database information about the local host. USE WITH CARE
+  add - adds a directory to be monitored on the local host
+  remove - removes a directory no longer to be monitored on the local host
+
+These actions and any options applicable to each actions are described below.
+
+Regardless of which action is specified, earthd operates according to
+settings given in a configuration file. See section CONFIGURATION
+below.
+
+CONFIGURATION FILE
+
+All central aspects of the daemon - for instance, where the database
+is located and where it stores its PID file - are controlled by a
+number of configuration files.
+
+In any case, earthd will first read the configuration file
+'config/earthd-base.yml' in the Earth home directory which contains
+default settings that apply if not overridden.
+
+After that, earthd proceeds as follows:
+
+- if a configuration file has been given with the -c (or
+  --configuration) option, that file will be read. It is an error if
+  the -c option is given and that file does not exist or is not a
+  valid configuration file.
+
+- if no configuration file has been given but a file called
+  ".earthd.yml" exists in the home directory of the user running
+  earthd, that file will be read. It is an error if that file exists
+  but is not a valid configuration file.
+
+- if neither a configuration file has been specified using the -c (or
+  --configuration) option, nor a user-specific configuration file
+  exists, and a file called "/etc/earthd.yml" exists, that file is
+  read. It is an error if that file exists but is not a valid
+  configuration file.
+
+- if no configuration file has been specified on the command line, and
+  there is neither a user-specific nor a host configuration file,
+  earthd operates on the defaults.
+
+The settings in the default configuration file are sensible in a
+development environment. If you do not override them, the following
+settings will be used:
+
+  socket_file: /tmp/earthd.sock
+  pid_file: /tmp/earthd.pid
+  log_file: /tmp/earthd.log
+  log_level: DEBUG
+  rails_environment: development
+
+In a production environment, you usually want to copy
+config/earthd.yml.example to /etc/earthd.yml. This will give you the
+following settings instead:
+
+  socket_file: /var/run/earthd.sock
+  pid_file: /var/run/earthd.pid
+  log_file: /var/log/earthd.log
+  log_level: INFO
+  rails_environment: production
+
+These settings are better suited for a production environment so make
+sure to put them into place by copying them either to the host-wide
+location (/etc/earthd.yml), to your user's home directory
+($HOME/.earthd.yml) or specify an appropriate file using the -c option.
+
+ACTIONS
+
+THE "START" ACTION
+
+If you specify the "start" action, this tells earthd to start the
+daemon. By default, the daemon is started in the background and the
+command returns immediately.
+
+If you want to debug earthd or if you want to keep a close eye on what
+it's doing, you might want to start it in the foreground instead. You
+can do that by specifying the "-f" option.
+
+When the daemon is run in the foreground, you can use the "-v" and
+"-q" options to control the verbosity of the daemon's console
+output. Note that these options do not control verbosity of the
+standard logging into the log file - that is controlled using the
+"log_level" setting in the configuration file.
+
+By default, log messages on levels UNKNOWN, FATAL, ERROR and WARN go
+to the console when the daemon is run in the foreground. Each time you
+specify the -v option, another log level goes to the console, and vice
+versa, each time you specify the -q option one log level less goes to
+the console. This means that:
+
+earthd start -f -q -q -q -q  - gives you complete silence
+earthd start -f -q -q -q     - gives you UNKNOWN messages only
+earthd start -f -q -q        - gives you UNKNOWN and FATAL messages
+earthd start -f -q           - gives you UNKNOWN, FATAL and ERROR
+earthd start -f              - gives you UNKNOWN, FATAL, ERROR and WARN
+earthd start -f -v           - gives you UNKNOWN, FATAL, ERROR, WARN and INFO
+earthd start -f -v -v        - gives you UNKNOWN, FATAL, ERROR, WARN, INFO and DEBUG (all messages)
+
+THE "STOP" ACTION
+
+Specifying the "stop" action will stop a running earth daemon
+immediately. It is equivalent to cancelling the daemon with SIGINT
+(Ctrl+C).
+
+THE "RESTART" ACTION
+
+Specifying the "stop" action will stop a running earth daemon (if any)
+and start it afresh.
+
+THE "STATUS" ACTION
+
+The "status" action will fetch the current status from the daemon and
+print it to stdout. This includes uptime, whether the daemon is
+running or still booting, and what the file monitor is currently
+doing.
+
+THE "CLEAR" ACTION
+
+The "clear" action clears out all data for the local host from the
+database. This operation is irreversible and should be used with care!
+
+At this point, the "clear" action requires that the server is stopped.
+
+THE "ADD" ACTION
+
+The "add" action schedules a new directory for addition to the list of
+watch directories. The new directory will be scanned the next time the
+file monitor starts a new iteration.
+
+At this point, the "add" action requires that the server is running.
+
+THE "REMOVE" ACTION
+
+The "remove" action is currently not implemented.

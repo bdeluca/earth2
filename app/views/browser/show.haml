@@ -1,0 +1,109 @@
+-# Copyright (C) 2007 Rising Sun Pictures and Matthew Landauer
+-# 
+-# This program is free software; you can redistribute it and/or modify
+-# it under the terms of the GNU General Public License as published by
+-# the Free Software Foundation; either version 2 of the License, or
+-# (at your option) any later version.
+-# 
+-# This program is distributed in the hope that it will be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-# 
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write to the Free Software
+-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+%p
+  %table.listing#browser
+    %thead
+      %tr
+        %th.icon/
+        - if @server
+          %th.name
+            %span Name
+          %th.modified
+            %span Modified
+          %th.user
+            %span User
+        - else
+          %th.name.Server
+            %span Name
+        %th.size
+          %span Size
+        %th.bar/
+    %tbody
+      %tr{:class => cycle('even', 'odd')}
+        %td.icon.parent
+          - if @directory
+            - if @directory.parent_id
+              = link_to "", :overwrite_params => {:path => @directory.parent.path}
+            - else
+              = link_to "", :overwrite_params => {:server => @server.name, :path => nil}
+          - else
+            - if @server
+              = link_to "", :overwrite_params => {:server => nil, :path => nil}
+        %td.name.parent{:colspan => "5"}
+          - if @directory
+            - if @directory.parent_id
+              = link_to "..", :overwrite_params => {:path => @directory.parent.path}
+            - else
+              = link_to "..", :overwrite_params => {:server => @server.name, :path => nil}
+          - else
+            - if @server
+              = link_to "..", :overwrite_params => {:server => nil, :path => nil}
+      - unless @servers_and_bytes.nil? || @servers_and_bytes.empty?
+        - @servers_and_bytes.sort!{|a,b| b[1] <=> a[1]}
+        - max_size = @servers_and_bytes[0][1]
+        - units = ApplicationHelper::human_units_of max_size
+        - for server, size in @servers_and_bytes
+          %tr{:class => cycle('even', 'odd')}
+            %td.icon.Server= link_to "", :overwrite_params => {:server => server.name, :path => nil}
+            %td.name.Server= link_to "<span>#{server.name}</span>", :overwrite_params => {:server => server.name, :path => nil}
+            %td.size.Server= link_to "<span>#{ApplicationHelper::human_size_in(units, size)} #{units}</span>", :overwrite_params => {:server => server.name, :path => nil}
+            %td.bar.Server= link_to bar(size, max_size, :class => "bar"), :overwrite_params => {:server => server.name, :path => nil}
+      
+      - @directories_and_bytes = [] if @directories_and_bytes.nil?
+      - @files = [] if @files.nil?
+      - @directories_and_bytes.sort!{|a,b| b[1] <=> a[1]}
+      - @files.sort!{|a,b| b.bytes <=> a.bytes}
+      - if @directories_and_bytes.empty?
+        - max_size_directories = 0
+      - else
+        - max_size_directories = @directories_and_bytes[0][1]
+      - if @files.empty?
+        - max_size_files = 0
+      - else
+        - max_size_files = @files[0].bytes
+      - if max_size_directories > max_size_files
+        - max_size = max_size_directories
+      - else
+        - max_size = max_size_files
+      
+      - units = ApplicationHelper::human_units_of max_size
+      - for directory, size in @directories_and_bytes
+        %tr{:class => cycle('even', 'odd')}
+          %td.icon.Dir= link_to "", :overwrite_params => {:path => directory.path}
+          %td.name.Dir{ :colspan => "3" }
+            = link_to(directory.name, {:overwrite_params => {:path => directory.path}})
+          %td.size.Dir= link_to "<span>#{ApplicationHelper::human_size_in(units, size)} #{units}</span>", :overwrite_params => {:path => directory.path}
+          %td.bar.Dir= link_to bar(size, max_size, :class => "bar"), :overwrite_params => {:path => directory.path}
+      - @files.each do |file|
+        %tr{:class => cycle('even', 'odd')}
+          %td.icon.File
+            %span/
+          %td.name.File
+            %span= file.name
+          %td.modified
+            %span{:title => file.modified}= distance_of_time_in_words_to_now(file.modified) + " ago"
+          %td.owner_user
+            %span= file.user.name
+          %td.size
+            %span= ApplicationHelper::human_size_in(units, file.bytes) + " " + units
+          %td.bar= bar file.bytes, max_size, :class => "filebar"
+
+- if @directory
+  #ExportLinks
+    = link_to image_tag("excel.png", :size => "20x22", :alt => "Save as CSV", :class => "export_img", :title => "Save as CSV"), :server => @server.name, :path => @directory.path, :format => :csv  
+    = link_to image_tag("xml.png", :size => "36x14", :alt => "Save as XML", :class => "export_img", :title => "Save as XML"), :server => @server.name, :path => @directory.path, :format => :xml
+

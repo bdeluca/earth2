@@ -1,0 +1,550 @@
+#!/usr/bin/env ruby
+
+# Copyright (C) 2007 Rising Sun Pictures and Matthew Landauer
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+LOAD_FILE_MONITOR_AS_PLUGIN = false
+
+require 'optparse'
+require 'ostruct'
+require 'socket'
+require 'logger'
+require 'erb'
+require 'yaml'
+require File.join(File.dirname(__FILE__), '..', 'lib', 'earth_plugin_interface', 'earth_plugin.rb')
+require File.join(File.dirname(__FILE__), '..', 'lib', 'earth_plugin_interface', 'plugin_manager.rb')
+require File.join(File.dirname(__FILE__), '..', 'lib', 'earthd_helper.rb')
+
+BANNER = <<END_OF_STRING
+
+USAGE: 
+  #{$0} [-c FILE] start [-f] [-v ...] [-q ...]   -  Start the Earth daemon on localhost
+  #{$0} [-c FILE] stop                           -  Stop the Earth daemon on localhost
+  #{$0} [-c FILE] restart                        -  Restart the Earth daemon on localhost
+  #{$0} [-c FILE] status                         -  Display status information about the Earth daemon
+  #{$0} [-c FILE] clear                          -  Clear out all data for localhost
+  #{$0} [-c FILE] add <directory>                -  Add a directory to be monitored by the daemon
+  #{$0} [-c FILE] remove <directory>             -  Stop monitoring a directory
+
+END_OF_STRING
+
+class Earthd
+
+  def parse_command_line
+
+    @options = OpenStruct.new
+
+    @options.only_initial_update = false
+    @options.force_update_time = nil
+    @options.foreground = false
+    @options.verbosity = 4 # default verbosity level: WARN
+
+    opts = OptionParser.new
+    opts.banner = BANNER
+    opts.separator "General Options:"
+    opts.on("-c", "--configuration FILE", "Read configuration from FILE instead of ~/.earthd.yml or /etc/earthd.yml.") do |config_file| 
+      @options.config_file = config_file
+    end
+    opts.separator ""
+    opts.separator "Options for action 'start':"
+    opts.on("-f", "--foreground", "Run the earth daemon in the foreground.") do
+      @options.foreground = true
+    end
+    opts.on("-v", "--verbose", "Increase verbosity level of console output when running in foreground.") do
+      @options.verbosity += 1
+    end
+    opts.on("-q", "--quiet", "Decrease verbosity level of console output when running in foreground.") do
+      @options.verbosity -= 1 
+    end
+    opts.separator ""
+    opts.separator "Debugging options:"
+    opts.on("-i", "--initial-only", "Only scan a new directory, do not update continuously.") { @options.only_initial_update = true }
+    opts.separator ""
+    opts.separator "Other options:"
+    opts.on_tail("-h", "--help", "Show this message") do
+      puts opts
+      exit
+    end
+
+    begin
+      opts.parse!(ARGV)
+    rescue
+      puts opts
+      exit 1
+    end
+
+    if ARGV.length < 1
+      $stderr.puts "ERROR: you must specify an action"
+      puts opts
+      exit 1
+    end
+    
+    @action = ARGV[0]
+    
+    accepted_actions = [ "start", "stop", "restart", "status", "clear", "add", "remove" ]
+    if not accepted_actions.include? @action
+      $stderr.puts "ERROR: unknown action #{@action}. Accepted actions are #{accepted_actions.inspect}"
+      puts opts
+      exit 1
+    end
+
+    if @action == "add" or @action == "remove"
+      if ARGV.length != 2
+        $stderr.puts "ERROR: you must specify a directory"
+        puts opts
+        exit 1
+      end
+    elsif ARGV.length > 1
+      $stderr.puts "ERROR: too many arguments"
+      puts opts
+      exit 1
+    end
+   
+    if @options.config_file and not File.exist? @options.config_file
+      $stderr.puts "ERROR: the configuration file #{@options.config_file} does not exist."
+      exit 1
+    end
+  end
+
+  def add_config_from(config_file)
+    begin
+      config = YAML.load(ERB.new(File.read(config_file)).result)
+      @config.update(config)
+    rescue
+      $stderr.puts "ERROR: Could not read configuration from #{config_file}: #{$!}"
+      exit 10
+    end
+  end
+
+  def read_config()
+    @config = {}
+    add_config_from(File.join(@earth_home_directory, "config", "earthd-base.yml"))
+
+    config_file_alternatives = [
+      @options.config_file,
+      File.join(ENV["HOME"], ".earth.yml"),
+      "/etc/earth.yml"
+    ]
+
+    @config_file = nil
+    for config_file in config_file_alternatives
+      if config_file and File.exist? config_file
+        @config_file = config_file
+        add_config_from config_file
+        break
+      end
+    end
+  end
+
+  def validate_config()
+    # Validate socket file
+    if not FileTest.directory? File.dirname(@config["socket_file"])
+      $stderr.puts("ERROR: The parent directory of socket file #{@config["socket_file"]} does not exist or is not a directory")
+      exit 5
+    end
+
+    # Validate pid file
+    if not FileTest.directory? File.dirname(@config["pid_file"])
+      $stderr.puts("ERROR: The parent directory of pid file #{@config["pid_file"]} does not exist or is not a directory")
+      exit 5
+    end
+
+    # Validate log file
+    if not FileTest.directory? File.dirname(@config["log_file"])
+      $stderr.puts("ERROR: The parent directory of pid file #{@config["log_file"]} does not exist or is not a directory")
+      exit 5
+    end
+
+    # Validate log level
+    begin
+      eval("Logger::#{@config["log_level"]}")
+    rescue
+      $stderr.puts("ERROR: The log level #{@config["log_level"]} is not acceptable")
+      exit 5
+    end
+
+    # Validate rails environment
+    accepted_rails_environments = ['production', 'test', 'development']
+    if not accepted_rails_environments.include? @config["rails_environment"]
+      $stderr.puts("ERROR: The rails_environment configuration setting must be one of #{accepted_rails_environments.inspect}; found #{@config["rails_environment"].inspect}")
+      exit 5
+    end
+  end
+
+  def initialize()
+    @booted = false
+    @earth_home_directory = File.expand_path(File.join(File.dirname(__FILE__), ".."))
+    parse_command_line
+    read_config
+    validate_config
+    @server_socket_path = @config["socket_file"]
+    @daemon_pid_file = @config["pid_file"]
+    @log_file_name = @config["log_file"]
+  end
+
+  def logger
+    @logger
+  end
+
+  def hostname()
+    Socket.gethostbyname(Socket.gethostname)[0]
+  end
+
+  def run()
+    case @action
+    when "start"
+      start()
+    when "stop"
+      stop()
+    when "restart"
+      stop()
+      sleep 0.3
+      start()
+    when "add"
+      response = talk_to_server("add #{ARGV[1]}")
+      puts response unless response == "OK"
+    when "remove"
+      $stderr.puts "Remove action is currently not implemented."
+    when "clear"
+      if not daemon_running?
+        init_rails
+        #fileMonitor.logger = logger
+        #fileMonitor.database_cleanup
+      else
+        $stderr.puts "ERROR: Cannot clear out the database while the daemon is running"
+        exit 5
+      end
+    when "status"
+      response = talk_to_server("status")
+      print response unless response.nil?
+    end
+  end
+
+  def daemon_running?
+    daemon_pid = PidFile.recall(@daemon_pid_file)
+    if not daemon_pid
+      false
+    else
+      true
+    end
+  end
+  
+  def report_not_running
+    $stderr.puts "earthd not running on #{hostname}"
+  end
+
+  def talk_to_server(request)
+    daemon_pid = PidFile.recall(@daemon_pid_file)
+    if not daemon_pid
+      report_not_running
+    else
+      begin
+        Process.kill("CHLD", daemon_pid)        
+        if File.exist? @server_socket_path
+          client = UNIXSocket.open(@server_socket_path)
+          client.send(request, 0)
+          response = client.recv(8192)
+          client.close
+          response
+        else
+          $stderr.puts "ERROR: The earth daemon appears to be running but it does not answer\n(PID file exists and process found, but socket not found)"
+          exit 5
+        end
+      rescue Errno::ESRCH
+        $stderr.puts "ERROR: The earth daemon doesn't appear to be running \n(PID file exists but process not found)"
+        exit 5
+      end
+    end
+  end
+
+  module PidFile
+    def self.store(pid_file, pid)
+    end
+    def self.recall(pid_file)
+      File.read(pid_file).strip.to_i rescue nil
+    end
+  end
+
+  def start()
+    daemon_pid = PidFile.recall(@daemon_pid_file)
+    if daemon_pid
+      begin
+        Process.kill("CHLD", daemon_pid)
+        $stderr.puts "ERROR: earthd is already running with process id #{daemon_pid}"
+      rescue Errno::ESRCH
+        $stderr.puts "ERROR: Another daemon has been running at process id #{daemon_pid} but it's apparantly no longer there"
+        $stderr.puts "Please ensure that there is no daemon running and remove file #{@daemon_pid_file}"
+      end
+      exit(5)
+    elsif @options.foreground
+      daemon_main()
+    else @options.foreground
+      fork do
+        Process.setsid
+        exit if fork
+        File.umask 0000
+        STDIN.reopen "/dev/null"
+        STDOUT.reopen "/dev/null", "a"
+        STDERR.reopen STDOUT
+        daemon_main()
+      end
+    end
+  end
+  
+  def stop()
+    daemon_pid = PidFile.recall(@daemon_pid_file)
+    if daemon_pid
+      begin
+        Process.kill("TERM", daemon_pid)
+      rescue Errno::ESRCH
+        File.unlink(@daemon_pid_file)
+        report_not_running
+      end
+    else
+      report_not_running
+    end
+  end
+
+  def daemon_status()
+    message = "Uptime: #{format_uptime(Time.now - @start_time)}\n"
+    message += "Status: #{@booted ? 'Running' : 'Booting'}\n"
+    if @booted
+      message += "File Monitor Status: #{@file_monitor.status_info}\n"
+      message += "Daemon Version: #{@daemon_version.strip}\n"
+    end
+    message
+  end
+
+  def daemon_add_directory(path)
+    logger.debug("received request to add directory '#{path}'")
+    if not @booted
+      "Refusing to add directory '#{path}': daemon hasn't booted up yet"
+    elsif not File.exists? path
+      "Refusing to add directory '#{path}': does not exist"
+    elsif not File.directory? path
+      "Refusing to add directory '#{path}': not a directory"
+    elsif not File.readable? path
+      "Refusing to add directory '#{path}': not readable"
+    else
+      Earth::Server::this_server.directories.each do |existing_directory|
+        if existing_directory.path == path
+          return "Refusing to add directory '#{path}': already monitored"
+        elsif subdirectory_of?(existing_directory.path, path)
+          return "Refusing to add directory '#{path}': parent directory #{existing_directory.path} is already monitored"
+        elsif subdirectory_of?(path, existing_directory.path)
+          return "Refusing to add directory '#{path}': is a superdirectory of monitored directory #{existing_directory.path}"
+        end
+      end
+      Earth::Server::this_server.directories.create(:name => path, :path => path)
+      "OK"
+    end
+  end
+  
+  def handle_client_connection(socket)
+    begin
+      message = socket.recv(1024)
+      logger.debug("Server received message #{message}")
+      if "status" == message
+        response = daemon_status()
+      elsif /add\s.*/ =~ message
+        response = daemon_add_directory(File.expand_path(message[3..-1].strip))
+      else
+        response = "Cannot parse message #{message}"
+      end
+      socket.send(response, 0)
+      logger.debug("Server sent response to message #{message}")
+    rescue => err
+      logger.fatal("Failure in client connection handler")      
+      logger.fatal(err)
+    end
+  end
+
+  def daemon_server()
+    begin
+      while true
+        begin
+          sock = @server_socket.accept
+          Thread.start { handle_client_connection(sock) }
+        rescue Errno::EAGAIN, Errno::ECONNABORTED, Errno::EPROTO, Errno::EINTR
+          IO.select([serv])
+          retry
+        end
+      end
+    rescue => err
+      logger.fatal("Exiting: Server died")
+      logger.fatal(err)
+      exit(5)
+    ensure
+      @server_socket.close()
+      File.unlink(@server_socket_path)
+    end
+  end
+
+  def init_rails()
+    # Set environment to run in
+    ENV["RAILS_ENV"] = @config["rails_environment"]
+    require File.join(File.dirname(__FILE__), '../config/environment')
+    if not LOAD_FILE_MONITOR_AS_PLUGIN
+      require File.join(File.dirname(__FILE__), '..', 'lib', 'earth_plugins', 'file_monitor.rb')
+    end
+  end    
+
+  def daemon_stop()
+    File.unlink(@daemon_pid_file) if File.exist? @daemon_pid_file
+    File.unlink(@server_socket_path) if File.exist? @server_socket_path
+  end
+
+  def daemon_main()
+    begin
+
+    log_file_logger = Logger.new(@log_file_name)
+
+      if @options.foreground
+        stdout_logger = Logger.new($stdout)
+        stdout_verbosity_levels = [ nil, "UNKNOWN", "FATAL", "ERROR", "WARN", "INFO", "DEBUG" ]
+        stdout_logger_level = stdout_verbosity_levels[ [@options.verbosity, stdout_verbosity_levels.size-1].min]
+        if stdout_logger_level
+          stdout_logger.level = eval("Logger::#{stdout_logger_level}")
+          @logger = MultiLogger.new([log_file_logger, stdout_logger])
+        else
+          @logger = log_file_logger
+        end
+      else
+        @logger = log_file_logger
+      end
+      log_file_logger.level = eval("Logger::#{@config['log_level'].upcase}")
+
+      log_file_logger.info("---")
+      @logger.info("Earth daemon is being started")
+      if @config_file
+        @logger.info("Using configuration overrides from #{@config_file}")
+      else
+        @logger.info("Using default configuration")
+      end
+      @logger.info("Using socket file '#{@config['socket_file']}'")
+      @logger.info("Using pid file '#{@config['pid_file']}'")
+      @logger.info("Using log file '#{@config['log_file']}' with severity threshold #{@config['log_level']}")
+      if @options.foreground
+        @logger.info("Using console output with severity threshold #{stdout_logger_level}")
+      end
+      @logger.info("Using rails environment '#{@config['rails_environment']}'")
+      if @config["override_update_interval"]
+        @logger.warn("Overriding update interval from database for this server with #{@config['override_update_interval']}s")
+      end
+
+      logger.debug("Daemon main loop enter")
+      trap("TERM") { logger.info("Exiting (received SIGTERM)"); daemon_stop; exit }
+      trap("INT") { logger.info("Exiting (received SIGINT)"); daemon_stop; exit }
+      File.open(@daemon_pid_file, "w") { |f| f.puts $$ }
+      @start_time = Time.now
+
+      File.unlink(@server_socket_path) if File.exist? @server_socket_path
+      logger.info("Starting server thread")
+      @server_socket = UNIXServer.open(@server_socket_path)
+      Thread.start { daemon_server }
+
+      logger.info("Initializing Rails")
+      init_rails()
+
+      @daemon_version = ApplicationHelper.earth_version
+
+      server = Earth::Server.this_server
+      server.daemon_version = @daemon_version
+      server.save!
+      
+      at_exit { server = Earth::Server.this_server; server.daemon_version = nil; server.save! }
+
+      logger.debug("Daemon version updated")
+
+      start_heartbeat_thread
+
+      @booted = true
+      logger.info("Entering main loop")
+
+      cache = {}
+
+      loaded_plugin_versions = {}
+
+      @plugin_manager = PluginManager.new
+
+      last_known_good_file_monitor = nil
+
+      if not LOAD_FILE_MONITOR_AS_PLUGIN
+        @file_monitor = FileMonitor.new
+      end
+
+      while true
+
+        begin
+          if LOAD_FILE_MONITOR_AS_PLUGIN
+            @file_monitor = @plugin_manager.load_plugin("EarthFileMonitor", loaded_plugin_versions["EarthFileMonitor"]) || @file_monitor
+            raise RuntimeError, "No file monitor plugin installed." unless @file_monitor
+            if loaded_plugin_versions["EarthFileMonitor"].nil? or loaded_plugin_versions["EarthFileMonitor"] < @file_monitor.class.plugin_version
+              loaded_plugin_versions["EarthFileMonitor"] = @file_monitor.class.plugin_version
+            end
+            
+            raise RuntimeError, "No file monitor found in database!" unless @file_monitor
+            logger.info("Using file monitor version #{@file_monitor.class.plugin_version}")
+          end
+          @file_monitor.logger = logger
+          @file_monitor.iteration(cache, false, @config["override_update_interval"])
+          if last_known_good_file_monitor and last_known_good_file_monitor != @file_monitor
+            Class.remove_class(last_known_good_file_monitor.class)
+          end
+          last_known_good_file_monitor = @file_monitor
+        rescue => err
+          if last_known_good_file_monitor \
+            and last_known_good_file_monitor != @file_monitor \
+            and LOAD_FILE_MONITOR_AS_PLUGIN
+
+            logger.error("Daemon caught fatal error from file monitor") 
+            logger.error(err)
+            logger.warn("Retrying with last known good file monitor version") 
+            Class.remove_class(@file_monitor)
+            @file_monitor = last_known_good_file_monitor
+            retry
+          else
+            raise
+          end
+        end
+      end
+    rescue => err
+      logger.fatal("Exiting: Daemon died")      
+      logger.fatal(err)
+      $stderr.puts "The earth daemon has died. You can find additional information in #{@log_file_name}"
+    ensure
+      File.unlink(@daemon_pid_file) if File.exist? @daemon_pid_file
+    end
+  end
+
+  def start_heartbeat_thread
+    ActiveRecord::Base.allow_concurrency = true
+    logger.info "Starting heartbeat thread"
+    Thread.new do
+      while true do
+        # reload the server object in case of changes on the database side
+        # TODO: There is a small chance that the server object will get stale here
+        server = Earth::Server.this_server
+        logger.debug("Heartbeat time:   About to update at time #{Time.now}")
+        server.heartbeat
+        logger.debug("Heartbeat time: Finished updating at time #{Time.now}")
+        sleep(server.heartbeat_interval)
+      end
+    end
+  end
+end
+
+Earthd.new.run
