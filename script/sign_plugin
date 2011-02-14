@@ -19,7 +19,7 @@
 require 'optparse'
 require 'ostruct'
 require 'rubygems'
-require_gem 'termios'
+gem 'termios'
 
 require File.join(File.dirname(__FILE__), '..', 'lib', 'earth_plugin_interface', 'plugin_manager')
 

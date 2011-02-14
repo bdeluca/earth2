@@ -371,7 +371,7 @@ module Earth
           # Grab cumulative size per leaf-level directory from the
           # database in one go.
           size_infos = Earth::File.find(:all, 
-                                        :select => ("SUM(bytes) AS sum_bytes, SUM(blocks) AS sum_blocks, COUNT(*) AS count, #{edge_case} AS dir_id"),
+                                        :select => ("SUM(files.bytes) AS sum_bytes, SUM(files.blocks) AS sum_blocks, COUNT(*) AS count, #{edge_case} AS dir_id"),
                                         :joins => "JOIN directories ON files.directory_id = directories.id",
                                         :conditions => [ 
                                           "directories.level >= ? " + \

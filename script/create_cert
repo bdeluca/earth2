@@ -18,7 +18,8 @@
 
 require 'openssl'
 require 'rubygems'
-require_gem 'termios'
+require 'termios'
+gem 'termios'
 
 keypair_file = File.expand_path(File.join(File.dirname(__FILE__), "..", "config", "keys", "test_key.pem"))
 cert_file = File.expand_path(File.join(File.dirname(__FILE__), "..", "config", "certificates", "test_cert.pem"))

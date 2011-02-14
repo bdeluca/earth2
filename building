@@ -1,0 +1,5 @@
+
+apt-get install ruby-dev
+gem install ruby-pg
+gem install rcov --include-dependencies
+rake rails:update
