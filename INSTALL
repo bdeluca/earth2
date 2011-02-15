@@ -1,0 +1,67 @@
+= Installation instructions for Earth 0.2 =
+
+=== Download Earth ===
+
+[https://open.rsp.com.au/earth/releases/earth-0.2.tar.gz Download version 0.2 of Earth]
+
+Untar the distribution and move to the root directory of the distribution
+{{{
+tar zxvf earth-0.2.tar.gz
+cd earth-0.2
+}}}
+
+=== Dependencies ===
+
+Earth is built using the language [http://www.ruby-lang.org Ruby],  the Ruby code coverage tool [http://eigenclass.org/hiki.rb?rcov rcov], the web development framework [http://www.rubyonrails.org/ Ruby on Rails], and the database [http://www.postgresql.org/ Postgres]. If you don't have these installed [wiki:InstallDependencies follow these instructions].
+ 
+=== Create Earth database ===
+
+Create three databases "earth_production", "earth_test" and "earth_development" which are accessible by the user "earth", with the password "earth". If you need help with this see [CreatingEarthDatabases these instructions].
+
+=== Migrate the database ===
+
+{{{
+rake db:migrate
+}}}
+
+=== Run the unit tests (optional) ===
+
+For a good deal of confidence that everything is set up correctly and working, run the unit tests. It's as simple as:
+{{{
+rake
+}}}
+
+=== Start Earth daemon ===
+
+{{{
+./script/earthd start
+}}}
+
+=== Choose a directory to watch ===
+
+The first time you use Earth, pick a directory to watch that is small and doesn't have too many files. That way it won't take too long for the daemon to do the initial indexing of its contents.
+
+{{{
+./script/earthd add directory_to_watch
+}}}
+
+=== Monitoring the daemon ===
+
+Depending on the size of the directory to be watched, the daemon will take a while to index the directory. Then after that, it will quickly see changes.
+
+To see the status of the daemon
+{{{
+./script/earthd status
+}}}
+
+=== Start web application ===
+The simplest way to get started is to use "Webrick" the default web server that comes with Rails.
+{{{
+./script/server
+}}}
+
+=== Use the Earth web application ===
+Point your browser at [http://localhost:3000] and you're using Earth!
+
+
+source: http://open.rsp.com.au/projects/earth/wiki/InstallInstructions-0.2?format=txt 
